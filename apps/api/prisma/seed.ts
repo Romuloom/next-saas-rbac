@@ -3,8 +3,15 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
-const passwordHash = await bcrypt.hash('123456', 1)
+
 async function seed() {
+  const passwordHash = await bcrypt.hash('123456', 1)
+
+  // Excluir os registros dependentes antes de excluir as organizações
+  await prisma.project.deleteMany()
+  await prisma.member.deleteMany()
+
+  // Excluir os registros de organização e usuário
   await prisma.organization.deleteMany()
   await prisma.user.deleteMany()
 
@@ -25,6 +32,7 @@ async function seed() {
       passwordHash,
     },
   })
+
   const anotherUser2 = await prisma.user.create({
     data: {
       name: faker.person.fullName(),
@@ -84,18 +92,9 @@ async function seed() {
       members: {
         createMany: {
           data: [
-            {
-              userId: user.id,
-              role: 'ADMIN',
-            },
-            {
-              userId: anotherUser.id,
-              role: 'MEMBER',
-            },
-            {
-              userId: anotherUser2.id,
-              role: 'MEMBER',
-            },
+            { userId: user.id, role: 'ADMIN' },
+            { userId: anotherUser.id, role: 'MEMBER' },
+            { userId: anotherUser2.id, role: 'MEMBER' },
           ],
         },
       },
@@ -104,7 +103,7 @@ async function seed() {
 
   await prisma.organization.create({
     data: {
-      name: 'Acme Inc (Memeber)',
+      name: 'Acme Inc (Member)',
       slug: 'acme-member',
       avatarUrl: faker.image.avatarGitHub(),
       shouldAttachUsersByDomain: true,
@@ -151,18 +150,9 @@ async function seed() {
       members: {
         createMany: {
           data: [
-            {
-              userId: user.id,
-              role: 'MEMBER',
-            },
-            {
-              userId: anotherUser.id,
-              role: 'ADMIN',
-            },
-            {
-              userId: anotherUser2.id,
-              role: 'MEMBER',
-            },
+            { userId: user.id, role: 'MEMBER' },
+            { userId: anotherUser.id, role: 'ADMIN' },
+            { userId: anotherUser2.id, role: 'MEMBER' },
           ],
         },
       },
@@ -218,18 +208,9 @@ async function seed() {
       members: {
         createMany: {
           data: [
-            {
-              userId: user.id,
-              role: 'BILLING',
-            },
-            {
-              userId: anotherUser.id,
-              role: 'ADMIN',
-            },
-            {
-              userId: anotherUser2.id,
-              role: 'MEMBER',
-            },
+            { userId: user.id, role: 'BILLING' },
+            { userId: anotherUser.id, role: 'ADMIN' },
+            { userId: anotherUser2.id, role: 'MEMBER' },
           ],
         },
       },
@@ -237,6 +218,14 @@ async function seed() {
   })
 }
 
-seed().then(() => {
-  console.log('Database seeded!')
-})
+seed()
+  .then(() => {
+    console.log('Database seeded!')
+  })
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(() => {
+    prisma.$disconnect()
+  })

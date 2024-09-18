@@ -80,20 +80,6 @@ model Invite {
   @@map("invites")
 }
 
-model Member {
-  id   String @id @default(uuid())
-  role Role   @default(MEMBER)
-
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  organizationId String       @map("organization_id")
-
-  user   User   @relation(fields: [userId], references: [id])
-  userId String @map("user_id")
-
-  @@unique([organizationId, userId])
-  @@map("members")
-}
-
 model Organization {
   id                        String   @id @default(uuid())
   name                      String
@@ -108,11 +94,26 @@ model Organization {
   ownerId String @map("owner_id")
 
   invites Invite[]
-  members Member[]
+  members Member[] // Remove o `onDelete` aqui
   project Project[]
 
   @@map("organizations")
 }
+
+model Member {
+  id   String @id @default(uuid())
+  role Role   @default(MEMBER)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade) // `onDelete` definido aqui
+  organizationId String       @map("organization_id")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id")
+
+  @@unique([organizationId, userId])
+  @@map("members")
+}
+
 
 model Project {
   id          String   @id @default(uuid())
