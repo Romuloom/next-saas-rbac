@@ -4,6 +4,8 @@ import { createRequire } from 'module'
 import { z } from 'zod'
 
 import { prisma } from '@/lib/prisma.js'
+
+import { BadResquestError } from './_errors/bad-request-error.js'
 const require = createRequire(import.meta.url)
 const bcrypt = require('bcryptjs')
 
@@ -36,13 +38,13 @@ export async function authenticateWithPassword(app: FastifyInstance) {
       })
 
       if (!userFromEmail) {
-        return reply.status(400).send({ message: 'Invalid credentials.' })
+        throw new BadResquestError('Invalid credentials.')
       }
 
       if (userFromEmail == null) {
-        return reply
-          .status(400)
-          .send({ message: 'User does not have a password, use social login' })
+        throw new BadResquestError(
+          'User does not have a password, use social login',
+        )
       }
       const isPasswordValid = await bcrypt.compare(
         password,
@@ -50,7 +52,7 @@ export async function authenticateWithPassword(app: FastifyInstance) {
       )
 
       if (!isPasswordValid) {
-        return reply.status(400).send({ message: 'Invalid credentials.' })
+        throw new BadResquestError('Invalid credentials.')
       }
 
       const token = await reply.jwtSign(

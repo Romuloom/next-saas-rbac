@@ -4,6 +4,8 @@ import { createRequire } from 'module'
 import { z } from 'zod'
 
 import { prisma } from '@/lib/prisma.js'
+
+import { BadResquestError } from './_errors/bad-request-error.js'
 const require = createRequire(import.meta.url)
 const bcrypt = require('bcryptjs')
 
@@ -29,9 +31,7 @@ export async function createAccount(app: FastifyInstance) {
       })
 
       if (userWithSameEmail) {
-        return reply
-          .status(400)
-          .send({ message: 'User with the same email already exists.' })
+        throw new BadResquestError('User with the same email already exists.')
       }
 
       const [, domain] = email.split('@')
